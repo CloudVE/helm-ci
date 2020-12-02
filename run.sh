@@ -15,7 +15,8 @@ CHART_REMOTE="https://$GITHUB_ACTOR:$GIT_TOKEN@github.com/$REPOSITORY.git"
 
 CHARTS_BRANCH=${CHARTS_BRANCH:-$GIT_BRANCH}
 CHARTS_REMOTE="https://$GITHUB_ACTOR:$CHARTS_TOKEN@github.com/$CHARTS_REPO.git"
-CHARTS_DIR=$(realpath "$(basename "$CHARTS_REPO")")
+BASE_DIR=$(dirname $(pwd))
+CHARTS_DIR=$(basename "$CHARTS_REPO")
 
 # exit on error
 set -e
@@ -63,8 +64,9 @@ package() {
   rm -rf charts requirements.lock
   helm dependency update)
 
-  (git clone "$CHARTS_REMOTE"
-  cd "$CHARTS_DIR" || error
+  (cd "$BASE_DIR"
+  git clone "$CHARTS_REMOTE"
+  cd ./"$CHARTS_DIR" || error
   git checkout "$CHARTS_BRANCH")
 
   # custom packaging command
@@ -74,7 +76,7 @@ package() {
 push_package() {
   # push updated chart
   echo "Pushing to branch $CHARTS_BRANCH of repo $CHARTS_REPO"
-  (cd "$CHARTS_DIR" || error
+  (cd "$BASE_DIR/$CHARTS_DIR" || error
   helm repo index . --url "https://raw.githubusercontent.com/$CHARTS_REPO/$CHARTS_BRANCH/"
   setup_git
   git add . && git commit -m "Automatic Packaging of $CHART_NAME chart" 
