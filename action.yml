@@ -9,7 +9,7 @@ inputs:
   packaging-command:
     description: command used to package chart
     required: false
-    default: 'helm package "./$CHART_NAME/" -d "$CHARTS_DIR/charts"'
+    default: 'helm package "./$CHART_NAME/" -d "$BASE_DIR/$CHARTS_DIR/charts"'
   chart-name:
     description: Chart name
     required: true
