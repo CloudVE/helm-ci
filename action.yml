@@ -19,8 +19,8 @@ inputs:
   chart-token:
     description: Chart token
     required: true
-  github-context:
-    description: Github context
+  github-labels:
+    description: Github labels
     required: true
   git-branch:
     description: Git branch
