@@ -39,13 +39,13 @@ extract_label() {
     /feature/{print "2"; exit;}
     /patch/{print "3"; exit;}
 	//{print ""; exit;}')
+  version=$(awk '/^version/{print $2}' "$CHART_FILE")
 }
 
 bump_version() {
   # bumps the part of the version defined by $bump and updates
   # the chart 
   echo "Bumping version"
-  version=$(awk '/^version/{print $2}' "$CHART_FILE")
   new_version=$(echo "$version" | awk "BEGIN {OFS=FS=\".\"} \$$bump += 1")
   sed -i "s/^version: .\+/version: $new_version/" "$CHART_FILE"
 }
@@ -54,7 +54,7 @@ push_version() {
   # pushes the updated version to the charts repo
   echo "Pushing to branch $GIT_BRANCH"
   git add .
-  git commit -m "Automatic Version Bumping"
+  git commit -m "Automatic Version Bumping from $version to $new_version"
   git push "$CHART_REMOTE" "HEAD:$GIT_BRANCH" -v -v
 }
 
@@ -79,7 +79,7 @@ push_package() {
   (cd "$BASE_DIR/$CHARTS_DIR" || error
   helm repo index . --url "https://raw.githubusercontent.com/$CHARTS_REPO/$CHARTS_BRANCH/"
   setup_git
-  git add . && git commit -m "Automatic Packaging of $CHART_NAME chart" 
+  git add . && git commit -m "Automatic Packaging of $CHART_NAME-$pushed_version chart" 
   git push "$CHARTS_REMOTE" "HEAD:$CHARTS_BRANCH")
 }
 
@@ -94,6 +94,8 @@ if ! git diff --name-status origin/"$GIT_BRANCH" | grep "$CHART_FILE"; then
     push_version
   fi
 fi
+
+pushed_version=${new_version:-$version}
 
 echo "Packaging and pushing..."
 package
