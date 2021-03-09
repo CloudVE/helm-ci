@@ -46,6 +46,7 @@ bump_version() {
   # bumps the part of the version defined by $bump and updates
   # the chart 
   echo "Bumping version"
+  # source: https://stackoverflow.com/a/64933139
   new_version=$(awk -v versionDiff="$bump" -F. -f bump.awk OFS=. <<< "$version")
   sed -i "s/^version: .\+/version: $new_version/" "$CHART_FILE"
 }
