@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 CHART_NAME="$1"
 CHARTS_REPO="$2"
@@ -18,6 +18,25 @@ CHARTS_REMOTE="https://$GITHUB_ACTOR:$CHARTS_TOKEN@github.com/$CHARTS_REPO.git"
 BASE_DIR=$(dirname $(pwd))
 CHARTS_DIR=$(basename "$CHARTS_REPO")
 
+BUMP_AWK=$(cat << "EOF"
+/[0-9]+\./ {
+  n = split(versionDiff, versions, ".")
+  if(n>NF) nIter=n; else nIter=NF
+  lastNonzero = nIter
+  for(i = 1; i <= nIter; ++i) {
+    if(int(versions[i]) > 0) {
+      lastNonzero = i
+    }
+    $i = versions[i] + $i
+  }
+  for(i = lastNonzero+1; i <= nIter; ++i) {
+    $i = 0
+  }
+  print
+}
+EOF
+)
+
 # exit on error
 set -e
 
@@ -36,8 +55,8 @@ extract_label() {
   echo "Extracting label information"
   bump=$(echo "$PR_LABELS" | awk \
     '/version/{print "1"; exit;}
-    /feature/{print "2"; exit;}
-    /patch/{print "3"; exit;}
+    /feature/{print "0.1"; exit;}
+    /patch/{print "0.0.1"; exit;}
 	//{print ""; exit;}')
   version=$(awk '/^version/{print $2}' "$CHART_FILE")
 }
@@ -46,7 +65,8 @@ bump_version() {
   # bumps the part of the version defined by $bump and updates
   # the chart 
   echo "Bumping version"
-  new_version=$(echo "$version" | awk "BEGIN {OFS=FS=\".\"} \$$bump += 1")
+  # source: https://stackoverflow.com/a/64933139
+  new_version=$(awk -v versionDiff="$bump" -F. "$BUMP_AWK" OFS=. <<< "$version")
   sed -i "s/^version: .\+/version: $new_version/" "$CHART_FILE"
 }
 
