@@ -18,7 +18,7 @@ CHARTS_REMOTE="https://$GITHUB_ACTOR:$CHARTS_TOKEN@github.com/$CHARTS_REPO.git"
 BASE_DIR=$(dirname $(pwd))
 CHARTS_DIR=$(basename "$CHARTS_REPO")
 
-cat <<EOF > bump.awk
+BUMP_AWK=$(cat << "EOF"
 /[0-9]+\./ {
   n = split(versionDiff, versions, ".")
   if(n>NF) nIter=n; else nIter=NF
@@ -35,6 +35,7 @@ cat <<EOF > bump.awk
   print
 }
 EOF
+)
 
 # exit on error
 set -e
@@ -65,7 +66,7 @@ bump_version() {
   # the chart 
   echo "Bumping version"
   # source: https://stackoverflow.com/a/64933139
-  new_version=$(awk -v versionDiff="$bump" -F. -f bump.awk OFS=. <<< "$version")
+  new_version=$(awk -v versionDiff="$bump" -F. "$BUMP_AWK" OFS=. <<< "$version")
   sed -i "s/^version: .\+/version: $new_version/" "$CHART_FILE"
 }
 
