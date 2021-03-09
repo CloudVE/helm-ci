@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 CHART_NAME="$1"
 CHARTS_REPO="$2"
