@@ -36,8 +36,8 @@ extract_label() {
   echo "Extracting label information"
   bump=$(echo "$PR_LABELS" | awk \
     '/version/{print "1"; exit;}
-    /feature/{print "2"; exit;}
-    /patch/{print "3"; exit;}
+    /feature/{print "0.1"; exit;}
+    /patch/{print "0.0.1"; exit;}
 	//{print ""; exit;}')
   version=$(awk '/^version/{print $2}' "$CHART_FILE")
 }
@@ -46,7 +46,7 @@ bump_version() {
   # bumps the part of the version defined by $bump and updates
   # the chart 
   echo "Bumping version"
-  new_version=$(echo "$version" | awk "BEGIN {OFS=FS=\".\"} \$$bump += 1")
+  new_version=$(awk -v versionDiff="$bump" -F. -f bump.awk OFS=. <<< "$version")
   sed -i "s/^version: .\+/version: $new_version/" "$CHART_FILE"
 }
 
