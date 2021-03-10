@@ -11,13 +11,13 @@ inputs:
     required: false
     default: 'helm package "./$CHART_NAME/" -d "$BASE_DIR/$CHARTS_DIR/charts"'
   chart-name:
-    description: Chart name
+    description: Name of chart (and directory to chart)
     required: true
   github-token:
-    description: Github token
+    description: Github token (for bumping version in the current chart repository)
     required: true
-  chart-token:
-    description: Chart token
+  charts-token:
+    description: Charts token (for pushing you packaged chart to your helm charts repository)
     required: true
   github-labels:
     description: Github labels
@@ -35,5 +35,5 @@ runs:
     - ${{ inputs.git-branch }}
     - ${{ inputs.github-labels }}
     - ${{ inputs.github-token }}
-    - ${{ inputs.chart-token }}
+    - ${{ inputs.charts-token }}
     - ${{ inputs.packaging-command }}
