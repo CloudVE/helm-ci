@@ -7,6 +7,7 @@ PR_LABELS="$4"
 GIT_TOKEN="$5"
 CHARTS_TOKEN="$6"
 PACKAGING_COMMAND="$7"
+DEP_NAME="$8"
 
 GIT_BRANCH=${GIT_BRANCH:-master}
 CHART_FILE="$CHART_NAME/Chart.yaml"
@@ -17,6 +18,7 @@ CHARTS_BRANCH=${CHARTS_BRANCH:-$GIT_BRANCH}
 CHARTS_REMOTE="https://$GITHUB_ACTOR:$CHARTS_TOKEN@github.com/$CHARTS_REPO.git"
 BASE_DIR=$(dirname $(pwd))
 CHARTS_DIR=$(basename "$CHARTS_REPO")
+
 
 BUMP_AWK=$(cat << "EOF"
 /[0-9]+\./ {
@@ -76,18 +78,25 @@ bump_version() {
   sed -i "s/^version: .\+/version: $new_version/" "$CHART_FILE"
 }
 
+bump_dep_version() {
+  echo "Bumping dependecy version for $DEP_NAME"
+  dep_version=$(sed -n "/$DEP_NAME/,/version/{p; /version/q}" "$CHART_FILE" | awk '/version/{print $2}')
+  new_dep_version=$(awk -v versionDiff="$bump" -F. "$BUMP_AWK" OFS=. <<< "$dep_version")
+  sed -i -e "/name: $dep_name/,/version: $dep_version/  s/version: $dep_version/version: $new_dep_version/" "$CHART_FILE"
+}
+
 push_version() {
   # pushes the updated version to the charts repo
   echo "Pushing to branch $GIT_BRANCH"
-  git add .
-  git commit -m "Automatic Version Bumping from $version to $new_version"
+  git add "$CHART_NAME"
+  git commit -m "Bumping $CHART_NAME from $version to $new_version"
   git push "$CHART_REMOTE" "HEAD:$GIT_BRANCH" -v -v
 }
 
 package() {
   # packages helm chart
   (cd "$CHART_NAME" || error
-  rm -rf charts requirements.lock
+  rm -rf charts requirements.lock Chart.lock
   helm dependency update)
 
   (cd "$BASE_DIR"
@@ -117,6 +126,9 @@ if ! git diff --name-status origin/"$GIT_BRANCH" | grep "$CHART_FILE"; then
   extract_label
   if [ "$bump" ]; then
     bump_version
+    if [ ! -z "$DEP_NAME" ]; then
+      bump_dep_version
+    fi
     push_version
   fi
 fi

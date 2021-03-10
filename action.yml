@@ -25,6 +25,9 @@ inputs:
   git-branch:
     description: Git branch
     required: true
+  dependency-name:
+    description: Name of dependency to bump alongside chart version (must be in Chart.yaml)
+    required: false
 
 runs:
   using: 'docker'
@@ -37,3 +40,4 @@ runs:
     - ${{ inputs.github-token }}
     - ${{ inputs.charts-token }}
     - ${{ inputs.packaging-command }}
+    - ${{ inputs.dependency-name }}
