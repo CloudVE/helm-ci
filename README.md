@@ -9,7 +9,7 @@ Make a file at `.github/workflows/packaging.yml` with the following:
 ```
 name: Package
 on:
-  pull_request:
+  pull_request_target:
     types: [closed]
 jobs:
   package:
