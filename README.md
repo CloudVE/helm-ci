@@ -1,6 +1,6 @@
-# CloudVE CI scripts
+# Helm Packaging Action
 
-Automatically packages and pushes chart on pull request
+Automatically bumps version, packages, and pushes chart to remote repository on pull request
 
 ## How to use
 
