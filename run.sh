@@ -57,8 +57,14 @@ extract_label() {
   echo "Extracting label information"
   bump=$(echo "$PR_LABELS" | awk \
     '/version/{print "1"; exit;}
+    /release/{print "1"; exit;}
+    /major_bump/{print "1"; exit;}
     /feature/{print "0.1"; exit;}
+    /enhancement/{print "0.1"; exit;}
+    /minor_bump/{print "0.1"; exit;}
     /patch/{print "0.0.1"; exit;}
+    /bug/{print "0.0.1"; exit;}
+    /values/{print "0.0.1"; exit;}
 	//{print ""; exit;}')
   version=$(awk '/^version/{print $2}' "$CHART_FILE")
 }
