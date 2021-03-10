@@ -88,15 +88,15 @@ bump_dep_version() {
 push_version() {
   # pushes the updated version to the charts repo
   echo "Pushing to branch $GIT_BRANCH"
-  git add .
-  git commit -m "Automatic Version Bumping from $version to $new_version"
+  git add "$CHART_NAME"
+  git commit -m "Bumping $CHART_NAME from $version to $new_version"
   git push "$CHART_REMOTE" "HEAD:$GIT_BRANCH" -v -v
 }
 
 package() {
   # packages helm chart
   (cd "$CHART_NAME" || error
-  rm -rf charts requirements.lock
+  rm -rf charts requirements.lock Chart.lock
   helm dependency update)
 
   (cd "$BASE_DIR"
