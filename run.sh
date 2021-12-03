@@ -56,10 +56,10 @@ extract_label() {
   bump=$(echo "$PR_LABELS" | awk \
     '/version/{print "1"; exit;}
     /release/{print "1"; exit;}
-    /major_bump/{print "1"; exit;}
+    /major/{print "1"; exit;}
     /feature/{print "0.1"; exit;}
     /enhancement/{print "0.1"; exit;}
-    /minor_bump/{print "0.1"; exit;}
+    /minor/{print "0.1"; exit;}
     /patch/{print "0.0.1"; exit;}
     /bug/{print "0.0.1"; exit;}
     /values/{print "0.0.1"; exit;}
