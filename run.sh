@@ -37,7 +37,7 @@ BUMP_AWK=$(cat << "EOF"
 EOF
 )
 
-# exit on error
+# Exit on error
 set -e
 
 error() {
@@ -45,14 +45,30 @@ error() {
 }
 
 setup_git() {
-  # initializes git info
+  # Initialize git info
   git config --local user.email "action@github.com"
   git config --local user.name "GitHub Action"
 }
 
+update_anvil_version() {
+  # Update anvil version number
+  # For example, update anvil.0 to anvil.1 while leaving chart version the same:
+  #   version: 5.0.0-anvil.0
+  #   version: 5.0.0-anvil.1
+  echo "Updating anvil version"
+  version=$(awk '/^version/{print $2}' "$CHART_FILE")
+  old_anvil_version=$(echo ${version##*.})
+  echo "Old anvil version: $old_anvil_version"
+  new_anvil_version="$(($old_anvil_version+1))"
+  echo "New anvil version: $new_anvil_version"
+  chart_version=$(awk '/^version/{print $2}' "$CHART_FILE" | awk -F- '{print $1}')
+  sed -i "s/^version: .\+/version: $chart_version-anvil.$new_anvil_version/" "$CHART_FILE"
+  new_version=$(awk '/^version/{print $2}' "$CHART_FILE")  # Var needed in rest of script
+}
+
 extract_label() {
-  # decides which part of the version to increment (if any)
-  echo "Extracting label information"
+  # Decide which part of the version to increment (if any)
+  echo "Extracting PR label information"
   bump=$(echo "$PR_LABELS" | awk \
     '/version/{print "1"; exit;}
     /release/{print "1"; exit;}
@@ -68,16 +84,16 @@ extract_label() {
 }
 
 bump_version() {
-  # bumps the part of the version defined by $bump and updates
-  # the chart 
+  # Bump the part of the version defined by $bump and update the chart
   echo "Bumping version"
   # source: https://stackoverflow.com/a/64933139
   new_version=$(awk -v versionDiff="$bump" -F. "$BUMP_AWK" OFS=. <<< "$version")
+  echo "New chart version is $new_version"
   sed -i "s/^version: .\+/version: $new_version/" "$CHART_FILE"
 }
 
 push_version() {
-  # pushes the updated version to the charts repo
+  # Push the updated version to the source repo
   echo "Pushing to branch $GIT_BRANCH"
   git add .
   git commit -m "Automatic Version Bumping from $version to $new_version"
@@ -85,7 +101,7 @@ push_version() {
 }
 
 package() {
-  # packages helm chart
+  # Package helm chart
   (cd "$CHART_NAME" || error
   rm -rf charts requirements.lock
   helm dependency update)
@@ -95,17 +111,17 @@ package() {
   cd ./"$CHARTS_DIR" || error
   git checkout "$CHARTS_BRANCH")
 
-  # custom packaging command
+  # Custom packaging command
   eval "$PACKAGING_COMMAND"
 }
 
 push_package() {
-  # push updated chart
+  # Push updated chart to branch $CHARTS_BRANCH of repo $CHARTS_REPO
   echo "Pushing to branch $CHARTS_BRANCH of repo $CHARTS_REPO"
   (cd "$BASE_DIR/$CHARTS_DIR" || error
   helm repo index . --url "https://raw.githubusercontent.com/$CHARTS_REPO/$CHARTS_BRANCH/"
   setup_git
-  git add . && git commit -m "Automatic Packaging of $CHART_NAME-$pushed_version chart" 
+  git add . && git commit -m "Automatic Packaging of $CHART_NAME-$pushed_version chart"
   git push "$CHARTS_REMOTE" "HEAD:$CHARTS_BRANCH")
 }
 
@@ -114,15 +130,21 @@ setup_git
 git remote -v
 git pull
 if ! git diff --name-status origin/"$GIT_BRANCH" | grep "$CHART_FILE"; then
-  extract_label
-  if [ "$bump" ]; then
-    bump_version
+  # `anvil` branch has its own versioning
+  if [ "$GIT_BRANCH" = "anvil" ]; then
+    update_anvil_version
     push_version
+  else
+    extract_label
+    if [ "$bump" ]; then
+      bump_version
+      push_version
+    fi
   fi
 fi
 
 pushed_version=${new_version:-$version}
 
-echo "Packaging and pushing..."
+echo "Packaging and pushing version $pushed_version..."
 package
 push_package
