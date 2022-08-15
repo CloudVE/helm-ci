@@ -130,8 +130,8 @@ setup_git
 git remote -v
 git pull
 if ! git diff --name-status origin/"$GIT_BRANCH" | grep "$CHART_FILE"; then
-  # `anvil` branch has its own versioning
-  if [ "$GIT_BRANCH" = "anvil" ]; then
+  # `galaxy`chart's `anvil` branch has its own versioning
+  if [[ "$CHART_NAME" = "galaxy" ]] && [[ "$GIT_BRANCH" = "anvil" ]]; then
     update_anvil_version
     push_version
   else
